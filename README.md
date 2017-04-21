@@ -4,7 +4,7 @@ platforms: .Net
 author: jianghaolu
 ---
 
-#Getting Started with App - Manage Web App Basic - in .Net #
+# Getting Started with App - Manage Web App Basic - in .Net #
 
           Azure App Service basic sample for managing web apps.
            - Create 3 web apps under the same new app service plan:
