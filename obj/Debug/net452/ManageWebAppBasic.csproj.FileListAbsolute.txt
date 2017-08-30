@@ -1,0 +1,4 @@
+C:\Sources\dotnet-samples\app-service-dotnet-manage-web-apps\bin\Debug\net452\ManageWebAppBasic.runtimeconfig.json
+C:\Sources\dotnet-samples\app-service-dotnet-manage-web-apps\bin\Debug\net452\ManageWebAppBasic.runtimeconfig.dev.json
+C:\Sources\dotnet-samples\app-service-dotnet-manage-web-apps\obj\Debug\net452\ManageWebAppBasic.csproj.ManageWebAppBasic.exe.config
+C:\Sources\dotnet-samples\app-service-dotnet-manage-web-apps\obj\Debug\net452\ManageWebAppBasic.csproj.CoreCompileInputs.cache
