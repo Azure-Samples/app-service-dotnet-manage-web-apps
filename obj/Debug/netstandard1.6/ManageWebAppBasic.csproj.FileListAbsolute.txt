@@ -1,2 +1,0 @@
-C:\Sources\dotnet-samples\app-service-dotnet-manage-web-apps\bin\Debug\netstandard1.6\ManageWebAppBasic.deps.json
-C:\Sources\dotnet-samples\app-service-dotnet-manage-web-apps\obj\Debug\netstandard1.6\ManageWebAppBasic.csproj.CoreCompileInputs.cache
