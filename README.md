@@ -4,20 +4,20 @@ languages:
 - csharp
 products:
 - azure
-services: App-Service
-platforms: dotnet
-author: yaohaizh
+extensions:
+- services: App-Service
+- platforms: dotnet
 ---
 
 # Getting started on managing Web Apps in C# #
 
-          Azure App Service basic sample for managing web apps.
-           - Create 3 web apps under the same new app service plan:
-             - 1, 2 are in the same resource group, 3 in a different one
-             - Stop and start 1, restart 2
-             - Add Java support to app 3
-           - List web apps
-           - Delete a web app
+ Azure App Service basic sample for managing web apps.
+  - Create 3 web apps under the same new app service plan:
+    - 1, 2 are in the same resource group, 3 in a different one
+    - Stop and start 1, restart 2
+    - Add Java support to app 3
+  - List web apps
+  - Delete a web app
 
 
 ## Running this Sample ##
