@@ -9,7 +9,7 @@ extensions:
 - platforms: dotnet
 ---
 
-# Getting started on managing Web Apps in C#
+# Getting started on managing Web Apps in C# #
 
  Azure App Service basic sample for managing web apps.
   - Create 3 web apps under the same new app service plan:
