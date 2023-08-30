@@ -1,12 +1,21 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
-using Microsoft.Azure.Management.AppService.Fluent;
-using Microsoft.Azure.Management.Fluent;
-using Microsoft.Azure.Management.ResourceManager.Fluent;
-using Microsoft.Azure.Management.ResourceManager.Fluent.Core;
-using Microsoft.Azure.Management.Samples.Common;
+using Azure;
+using Azure.Core;
+using Azure.Identity;
+using Azure.ResourceManager;
+using Azure.ResourceManager.AppService;
+using Azure.ResourceManager.AppService.Models;
+using Azure.ResourceManager.Resources;
+using Azure.ResourceManager.Samples.Common;
+using Azure.ResourceManager.Sql;
+using Azure.ResourceManager.Sql.Models;
 using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace ManageWebAppBasic
 {
@@ -22,13 +31,18 @@ namespace ManageWebAppBasic
          *  - Delete a web app
          */
 
-        public static void RunSample(IAzure azure)
+        public static async Task RunSample(ArmClient client)
         {
-            string app1Name = SdkContext.RandomResourceName("webapp1-", 20);
-            string app2Name = SdkContext.RandomResourceName("webapp2-", 20);
-            string app3Name = SdkContext.RandomResourceName("webapp3-", 20);
-            string rg1Name = SdkContext.RandomResourceName("rg1NEMV_", 24);
-            string rg2Name = SdkContext.RandomResourceName("rg2NEMV_", 24);
+            AzureLocation region = AzureLocation.EastUS;
+            string app1Name = Utilities.CreateRandomName("webapp1-");
+            string app2Name = Utilities.CreateRandomName("webapp2-");
+            string app3Name = Utilities.CreateRandomName("webapp3-");
+            string rg1Name = Utilities.CreateRandomName("rg1NEMV_");
+            string rg2Name = Utilities.CreateRandomName("rg2NEMV_");
+            var lro1 = await client.GetDefaultSubscription().GetResourceGroups().CreateOrUpdateAsync(Azure.WaitUntil.Completed, rg1Name, new ResourceGroupData(AzureLocation.EastUS));
+            var resourceGroup1 = lro1.Value;
+            var lro2 = await client.GetDefaultSubscription().GetResourceGroups().CreateOrUpdateAsync(Azure.WaitUntil.Completed, rg2Name, new ResourceGroupData(AzureLocation.EastUS));
+            var resourceGroup2 = lro2.Value;
 
             try
             {
@@ -37,66 +51,91 @@ namespace ManageWebAppBasic
 
                 Utilities.Log("Creating web app " + app1Name + " in resource group " + rg1Name + "...");
 
-                var app1 = azure.WebApps
-                        .Define(app1Name)
-                        .WithRegion(Region.USWest)
-                        .WithNewResourceGroup(rg1Name)
-                        .WithNewWindowsPlan(PricingTier.StandardS1)
-                        .Create();
+                var webSite1Collection = resourceGroup1.GetWebSites();
+                var webSite1Data = new WebSiteData(region)
+                {
+                    SiteConfig = new Azure.ResourceManager.AppService.Models.SiteConfigProperties()
+                    {
+                        WindowsFxVersion = "PricingTier.StandardS1",
+                        NetFrameworkVersion = "NetFrameworkVersion.V4_6",
+                        PhpVersion = "PhpVersion.V5_6",
+                    },
 
-                Utilities.Log("Created web app " + app1.Name);
-                Utilities.Print(app1);
+                };
+                var webSite1_lro = await webSite1Collection.CreateOrUpdateAsync(Azure.WaitUntil.Completed, app1Name, webSite1Data);
+                var webSite1 = webSite1_lro.Value;
+
+                Utilities.Log("Created web app " + webSite1.Data.Name);
+                Utilities.Print(webSite1);
 
                 //============================================================
                 // Create a second web app with the same app service plan
 
                 Utilities.Log("Creating another web app " + app2Name + " in resource group " + rg1Name + "...");
-                var plan = azure.AppServices.AppServicePlans.GetById(app1.AppServicePlanId);
-                var app2 = azure.WebApps
-                        .Define(app2Name)
-                        .WithExistingWindowsPlan(plan)
-                        .WithExistingResourceGroup(rg1Name)
-                        .Create();
+                var planId = webSite1.Data.AppServicePlanId;
+                var webSite2Collection = resourceGroup2.GetWebSites();
+                var webSite2Data = new WebSiteData(region)
+                {
+                    SiteConfig = new Azure.ResourceManager.AppService.Models.SiteConfigProperties()
+                    {
+                        WindowsFxVersion = "PricingTier.StandardS1",
+                        NetFrameworkVersion = "NetFrameworkVersion.V4_6",
+                    },
+                    AppServicePlanId = planId,
+                };
+                var webSite2_lro = await webSite2Collection.CreateOrUpdateAsync(Azure.WaitUntil.Completed, app2Name, webSite2Data);
+                var webSite2 = webSite2_lro.Value;
 
-                Utilities.Log("Created web app " + app2.Name);
-                Utilities.Print(app2);
+                Utilities.Log("Created web app " + webSite2.Data.Name);
+                Utilities.Print(webSite2);
 
                 //============================================================
                 // Create a third web app with the same app service plan, but
                 // in a different resource group
 
                 Utilities.Log("Creating another web app " + app3Name + " in resource group " + rg2Name + "...");
-                var app3 = azure.WebApps
-                        .Define(app3Name)
-                        .WithExistingWindowsPlan(plan)
-                        .WithNewResourceGroup(rg2Name)
-                        .Create();
+                var webSite3Collection = resourceGroup2.GetWebSites();
+                var webSite3Data = new WebSiteData(region)
+                {
+                    SiteConfig = new Azure.ResourceManager.AppService.Models.SiteConfigProperties()
+                    {
+                        WindowsFxVersion = "PricingTier.StandardS1",
+                        NetFrameworkVersion = "NetFrameworkVersion.V4_6",
+                    },
+                    AppServicePlanId = planId,
+                };
+                var webSite3_lro = await webSite3Collection.CreateOrUpdateAsync(Azure.WaitUntil.Completed, app3Name, webSite3Data);
+                var webSite3 = webSite3_lro.Value;
 
-                Utilities.Log("Created web app " + app3.Name);
-                Utilities.Print(app3);
+                Utilities.Log("Created web app " + webSite3.Data.Name);
+                Utilities.Print(webSite3);
 
                 //============================================================
                 // stop and start app1, restart app 2
-                Utilities.Log("Stopping web app " + app1.Name);
-                app1.Stop();
-                Utilities.Log("Stopped web app " + app1.Name);
-                Utilities.Print(app1);
-                Utilities.Log("Starting web app " + app1.Name);
-                app1.Start();
-                Utilities.Log("Started web app " + app1.Name);
-                Utilities.Print(app1);
-                Utilities.Log("Restarting web app " + app2.Name);
-                app2.Restart();
-                Utilities.Log("Restarted web app " + app2.Name);
-                Utilities.Print(app2);
+                Utilities.Log("Stopping web app " + webSite1.Data.Name);
+                await webSite1.StopAsync();
+                Utilities.Log("Stopped web app " + webSite1.Data.Name);
+                Utilities.Print(webSite1);
+                Utilities.Log("Starting web app " + webSite1.Data.Name);
+                await webSite1.StartAsync();
+                Utilities.Log("Started web app " + webSite1.Data.Name);
+                Utilities.Print(webSite1);
+                Utilities.Log("Restarting web app " + webSite2.Data.Name);
+                await webSite2.RestartAsync();
+                Utilities.Log("Restarted web app " + webSite2.Data.Name);
+                Utilities.Print(webSite2);
 
                 //============================================================
                 // Configure app 3 to have Java 8 enabled
                 Utilities.Log("Adding Java support to web app " + app3Name + "...");
-                app3.Update()
-                        .WithJavaVersion(JavaVersion.V8Newest)
-                        .WithWebContainer(WebContainer.Tomcat8_0Newest)
-                        .Apply();
+                await webSite3.UpdateAsync(new SitePatchInfo()
+                {
+                    SiteConfig = new SiteConfigProperties()
+                    {
+                        JavaVersion = "V8Newest",
+                        JavaContainer = "Tomcat8_0Newest"
+                    }
+                });
                 Utilities.Log("Java supported on web app " + app3Name + "...");
 
                 //=============================================================
@@ -104,14 +143,14 @@ namespace ManageWebAppBasic
 
                 Utilities.Log("Printing list of web apps in resource group " + rg1Name + "...");
 
-                foreach (var webApp in azure.WebApps.ListByResourceGroup(rg1Name))
+                await foreach (var webApp in webSite1Collection.GetAllAsync())
                 {
                     Utilities.Print(webApp);
                 }
 
                 Utilities.Log("Printing list of web apps in resource group " + rg2Name + "...");
 
-                foreach (var webApp in azure.WebApps.ListByResourceGroup(rg2Name))
+                await foreach (var webApp in webSite2Collection.GetAllAsync())
                 {
                     Utilities.Print(webApp);
                 }
@@ -120,11 +159,11 @@ namespace ManageWebAppBasic
                 // Delete a web app
 
                 Utilities.Log("Deleting web app " + app1Name + "...");
-                azure.WebApps.DeleteByResourceGroup(rg1Name, app1Name);
+                await webSite1.DeleteAsync(WaitUntil.Completed);
                 Utilities.Log("Deleted web app " + app1Name + "...");
 
                 Utilities.Log("Printing list of web apps in resource group " + rg1Name + " again...");
-                foreach (var webApp in azure.WebApps.ListByResourceGroup(rg1Name))
+                await foreach (var webApp in webSite1Collection.GetAllAsync())
                 {
                     Utilities.Print(webApp);
                 }
@@ -134,10 +173,10 @@ namespace ManageWebAppBasic
                 try
                 {
                     Utilities.Log("Deleting Resource Group: " + rg2Name);
-                    azure.ResourceGroups.DeleteByName(rg2Name);
+                    await resourceGroup2.DeleteAsync(WaitUntil.Completed);
                     Utilities.Log("Deleted Resource Group: " + rg2Name);
                     Utilities.Log("Deleting Resource Group: " + rg1Name);
-                    azure.ResourceGroups.DeleteByName(rg1Name);
+                    await resourceGroup1.DeleteAsync(WaitUntil.Completed);
                     Utilities.Log("Deleted Resource Group: " + rg1Name);
                 }
                 catch (NullReferenceException)
@@ -151,24 +190,23 @@ namespace ManageWebAppBasic
             }
         }
 
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             try
             {
                 //=================================================================
                 // Authenticate
-                var credentials = SdkContext.AzureCredentialsFactory.FromFile(Environment.GetEnvironmentVariable("AZURE_AUTH_LOCATION"));
-
-                var azure = Azure
-                    .Configure()
-                    .WithLogLevel(HttpLoggingDelegatingHandler.Level.Basic)
-                    .Authenticate(credentials)
-                    .WithDefaultSubscription();
+                var clientId = Environment.GetEnvironmentVariable("CLIENT_ID");
+                var clientSecret = Environment.GetEnvironmentVariable("CLIENT_SECRET");
+                var tenantId = Environment.GetEnvironmentVariable("TENANT_ID");
+                var subscription = Environment.GetEnvironmentVariable("SUBSCRIPTION_ID");
+                ClientSecretCredential credential = new ClientSecretCredential(tenantId, clientId, clientSecret);
+                ArmClient client = new ArmClient(credential, subscription);
 
                 // Print selected subscription
-                Utilities.Log("Selected subscription: " + azure.SubscriptionId);
+                Utilities.Log("Selected subscription: " + client.GetSubscriptions().Id);
 
-                RunSample(azure);
+                await RunSample(client);
             }
             catch (Exception e)
             {

@@ -9,34 +9,31 @@ extensions:
   platforms: dotnet
 ---
 
-# Getting started on managing Web Apps in C# #
+# Getting started on log streaming for Functions using C# #
 
- Azure App Service basic sample for managing web apps.
-  - Create 3 web apps under the same new app service plan:
-    - 1, 2 are in the same resource group, 3 in a different one
-    - Stop and start 1, restart 2
-    - Add Java support to app 3
-  - List web apps
-  - Delete a web app
+ Azure App Service basic sample for managing function apps.
+  - Create a function app under the same new app service plan:
+    - Deploy to app using FTP
+    - stream logs for 30 seconds
 
 
 ## Running this Sample ##
 
 To run this sample:
 
-Set the environment variable `AZURE_AUTH_LOCATION` with the full path for an auth file. See [how to create an auth file](https://github.com/Azure/azure-libraries-for-net/blob/master/AUTH.md).
+Set the environment variable `CLIENT_ID`,`CLIENT_SECRET`,`TENANT_ID`,`SUBSCRIPTION_ID` with the full path for an auth file. See [how to create an auth file](https://github.com/Azure/azure-libraries-for-net/blob/master/AUTH.md).
 
-    git clone https://github.com/Azure-Samples/app-service-dotnet-manage-web-apps.git
+    git clone https://github.com/Azure-Samples/app-service-dotnet-manage-logs-for-function-apps.git
 
-    cd app-service-dotnet-manage-web-apps
+    cd app-service-dotnet-manage-logs-for-function-apps
 
     dotnet build
 
-    bin\Debug\net452\ManageWebAppBasic.exe
+    bin\Debug\net452\ManageFunctionAppLogs.exe
 
 ## More information ##
 
-[Azure Management Libraries for C#](https://github.com/Azure/azure-sdk-for-net/tree/Fluent)
+[Azure Management Libraries for C#](https://github.com/Azure/azure-sdk-for-net/)
 [Azure .Net Developer Center](https://azure.microsoft.com/en-us/develop/net/)
 If you don't have a Microsoft Azure subscription you can get a FREE trial account [here](http://go.microsoft.com/fwlink/?LinkId=330212)
 
